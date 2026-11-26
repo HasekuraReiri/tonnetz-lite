@@ -1,0 +1,17 @@
+# Runtime and generated files
+.runtime/
+__pycache__/
+*.py[cod]
+*.log
+*.zip
+*.sha256
+
+# Generated Windows shortcut
+Tonnetz Lite.lnk
+
+# Editors and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
