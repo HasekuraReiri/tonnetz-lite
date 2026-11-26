@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tonnetz Lite · 和弦网</title>
+<meta name="description" content="Tonnetz Lite 独立精简版：可无限扩展的三和弦网络、五度圈 / 十二平均律圈与和弦进行。">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23202327'/%3E%3Cpath d='M16 6 27 25H5z' fill='none' stroke='%23f4f1e9' stroke-width='2'/%3E%3Ccircle cx='16' cy='6' r='2.2' fill='%23e0a95c'/%3E%3Ccircle cx='27' cy='25' r='2.2' fill='%237fa8d8'/%3E%3Ccircle cx='5' cy='25' r='2.2' fill='%23c96a5f'/%3E%3C/svg%3E">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <a class="brand" href="#/tonnetz" aria-label="Tonnetz 首页">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M20 5 36 33H4z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M20 5 20 33M4 33 36 33M20 5 4 33M20 5 36 33" stroke="currentColor" stroke-width=".5" opacity=".35"/>
+        <circle cx="20" cy="5" r="3.1" class="dot-a"/>
+        <circle cx="36" cy="33" r="3.1" class="dot-b"/>
+        <circle cx="4" cy="33" r="3.1" class="dot-c"/>
+      </svg>
+      <span class="brand-text">
+        <strong>Tonnetz</strong>
+        <small>三和弦网络 · Lite 独立版</small>
+      </span>
+    </a>
+
+    <nav class="mainnav" aria-label="主导航">
+      <a href="#/tonnetz" data-route="tonnetz" class="on"><span>01</span>和弦网</a>
+    </nav>
+
+    <form class="quick-input" id="quickInputForm" autocomplete="off">
+      <input id="quickInput" type="text" placeholder="输入和弦 / 音级 / 音集，回车显示" spellcheck="false" aria-label="快速输入和弦">
+      <button type="submit" title="解析并显示">↵</button>
+    </form>
+
+    <div class="top-actions">
+      <div class="seg" id="namingSwitch" role="group" aria-label="音名显示方式">
+        <button data-naming="reference" class="on" title="参考图音名：C D E F G A B 及等音">音名</button>
+        <button data-naming="integer" title="音集理论：0–11 代表十二个音">0–11</button>
+      </div>
+      <button class="icon-btn" id="soundBtn" title="声音开关" aria-pressed="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <button class="icon-btn" id="helpBtn" title="使用说明" aria-label="使用说明">?</button>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============================ TONNETZ ============================ -->
+    <section class="view on" id="view-tonnetz" data-view="tonnetz">
+      <div class="workbench">
+        <div class="stage card" id="tonnetzStage">
+          <canvas id="tonnetzCanvas" aria-label="Tonnetz 三和弦网络图"></canvas>
+
+          <div class="stage-toolbar">
+            <div class="zoomer">
+              <button class="icon-btn sm" data-zoom="out" title="缩小">−</button>
+              <span class="zoom-label" id="zoomLabel">100%</span>
+              <button class="icon-btn sm" data-zoom="in" title="放大">+</button>
+              <button class="icon-btn sm wide" data-zoom="reset" title="回到中心">归位</button>
+            </div>
+            <span class="toolbar-sep"></span>
+            <label class="switchline"><input type="checkbox" id="tglFunctions" checked><span>功能着色</span></label>
+            <label class="switchline"><input type="checkbox" id="tglChordNames"><span>三角形和弦名</span></label>
+            <label class="switchline"><input type="checkbox" id="tglDegrees" checked><span>功能罗马数字</span></label>
+            <label class="switchline" title="在网格上显示四部和声（跟随和弦进行）"><input type="checkbox" id="tglSatb"><span>四声部</span></label>
+          </div>
+
+          <div class="satb-controls" id="satbControls" hidden>
+            <label class="satb-speed">声部移动
+              <input type="range" id="satbSpeed" min="0.6" max="3" step="0.1" value="1.6">
+              <b id="satbSpeedVal">1.6s</b>
+            </label>
+            <span class="satb-sep"></span>
+            <label class="satb-retain">保留
+              <select id="satbRetain">
+                <option value="0">0</option>
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+              次
+            </label>
+          </div>
+
+          <div class="stage-legend" aria-hidden="true">
+            <span><i class="lg-line solid"></i>纯五度</span>
+            <span><i class="lg-line solid-lite"></i>大三度</span>
+            <span><i class="lg-line dotted"></i>小三度</span>
+            <span><i class="lg-tri major"></i>大三和弦（▲）</span>
+            <span><i class="lg-tri minor"></i>小三和弦（▼）</span>
+          </div>
+
+          <div class="stage-hint">
+            <kbd>拖动</kbd> 平移 · <kbd>滚轮</kbd> 缩放 · <kbd>点击三角形</kbd> 选择和弦 · <kbd>点击音名/圆点</kbd> 选择音符
+          </div>
+
+          <div class="stage-badge" id="stageBadge">C 大调 · 自然大调</div>
+        </div>
+
+        <aside class="sidebar" id="tonnetzSidebar">
+          <section class="card panel sel-panel" id="selPanel">
+            <div class="panel-head">
+              <h2>当前选择</h2>
+              <div class="panel-actions">
+                <button class="mini-btn" id="playSelBtn" title="播放当前和弦">▶ 播放</button>
+                <button class="mini-btn" id="clearSelBtn" title="清空">清除</button>
+              </div>
+            </div>
+            <div class="sel-body" id="selBody"></div>
+          </section>
+
+          <section class="card panel circle-panel">
+            <div class="panel-head">
+              <h2 id="circleTitle">五度圈</h2>
+              <span class="panel-note" id="circleModeLabel">辅助定位</span>
+            </div>
+            <div class="circle-switch" id="circleSwitch" role="group" aria-label="音级圈类型">
+              <button data-circle="fifths" class="on">五度圈</button>
+              <button data-circle="chromatic">十二平均律圈</button>
+            </div>
+            <div class="circle-wrap">
+              <canvas id="circleCanvas" aria-label="五度圈 / 十二平均律圈"></canvas>
+            </div>
+            <div class="circle-foot">
+              <div class="legend-inline">
+                <span><i class="dot tone-t"></i>主 T</span>
+                <span><i class="dot tone-s"></i>下属 S</span>
+                <span><i class="dot tone-d"></i>属 D</span>
+              </div>
+              <span class="hint-sm">点击音级可加入选择</span>
+            </div>
+          </section>
+
+          <section class="card panel key-panel">
+            <div class="panel-head">
+              <h2>调性</h2>
+              <span class="panel-note">功能属性依据</span>
+            </div>
+            <div class="key-row">
+              <label class="field">
+                <span>主音</span>
+                <select id="keyTonic"></select>
+              </label>
+              <label class="field grow">
+                <span>调式</span>
+                <select id="keyMode"></select>
+              </label>
+              <label class="switchline compact"><input type="checkbox" id="keyEnabled" checked><span>启用</span></label>
+            </div>
+            <div class="key-scale" id="keyScale"></div>
+            <div class="func-legend" id="funcLegend"></div>
+          </section>          <section class="card panel input-panel">
+            <div class="panel-head">
+              <h2>输入与检索</h2>
+              <span class="panel-note">和弦 / 音符 / 音集</span>
+            </div>
+            <form id="inputForm" autocomplete="off">
+              <div class="input-row">
+                <input id="selInput" type="text" placeholder="如 Cmaj7、Am7/E、C E G、[0,2,4,5,9]" spellcheck="false">
+                <button class="primary-btn sm" type="submit">显示</button>
+              </div>
+              <div class="input-error" id="inputError"></div>
+            </form>
+            <div class="chips" id="inputExamples">
+              <button data-sample="Cmaj7">Cmaj7</button>
+              <button data-sample="Am7">Am7</button>
+              <button data-sample="F#dim7">F#dim7</button>
+              <button data-sample="C E G B♭">C E G B♭</button>
+              <button data-sample="[0,2,4,5,9]">[0,2,4,5,9]</button>
+              <button data-sample="[0,1,4,6]">[0,1,4,6]</button>
+            </div>
+            <div class="set-theory" id="setTheory"></div>
+          </section>
+
+
+        </aside>
+      </div>
+
+      <div class="sequence-bar card">
+        <div class="seq-head">
+          <div class="seq-title">
+            <h2>和弦进行</h2>
+            <span class="seq-count" id="seqCount">0 个环节</span>
+            <span class="seq-sync" id="seqCurrentNote"></span>
+          </div>
+          <div class="seq-controls">
+            <button class="mini-btn" id="seqPrev" title="上一个 (←)">◀ 上一个</button>
+            <button class="mini-btn primary" id="seqPlay" title="播放/暂停 (空格)">▶ 播放</button>
+            <button class="mini-btn" id="seqNext" title="下一个 (→)">下一个 ▶</button>
+            <label class="switchline compact"><input type="checkbox" id="seqLoop"><span>循环</span></label>
+            <label class="tempo">速度 <input type="range" id="seqTempo" min="40" max="180" value="84"><b id="seqTempoVal">84</b></label>
+            <button class="mini-btn" id="satbBtn" title="严格四部和声分析与四声部整理">四部和声</button>
+            <button class="mini-btn" id="exportMidiBtn" title="导出 MIDI（流行 / 严格四部和声）">导出 MIDI</button>
+            <button class="mini-btn" id="seqEdit">编辑列表</button>
+          </div>
+        </div>
+        <div class="seq-track" id="seqTrack">
+          <div class="seq-empty">还没有和弦进行。点击「编辑列表」粘贴若干和弦，或在图中依次点击三角形。</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="appfoot">
+    <span>Tonnetz Lite · 三和弦网络与和声可视化</span>
+    <span class="foot-dots">●</span>
+    <span>音集理论 · 声部写作 · MIDI</span>
+    <span class="foot-spacer"></span>
+    <span class="foot-link">独立精简版 · 无外部数据</span>
+  </footer>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="tooltip" role="tooltip"></div>
+<div id="modalRoot"></div>
+
+<div id="bootError" class="boot-error" hidden></div>
+
+<script>
+window.addEventListener('error', function (e) {
+  var b = document.getElementById('bootError');
+  if (b && b.hidden) { b.hidden = false; b.textContent = '运行错误：' + (e.message || e.error) + '\n' + (e.filename || '') + ':' + (e.lineno || ''); }
+});
+window.addEventListener('unhandledrejection', function (e) {
+  var b = document.getElementById('bootError');
+  if (b && b.hidden) { b.hidden = false; b.textContent = 'Promise 错误：' + (e.reason && (e.reason.stack || e.reason.message) || e.reason); }
+});
+</script>
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
